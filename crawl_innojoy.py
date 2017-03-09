@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
+import time
 import json
 import cPickle
+import logging
 import requests
-import pandas as pd
+import commands
 
-stknm_fname = 'stknm.xls'
-stk_innojoy_res = 'stk_innojoy_info.csv'
 url = 'http://www.innojoy.com/client/interface.aspx'
+data_dir = 'data/'
+crawled_file_lst = os.listdir(data_dir)
+stknm_merged_txt = 'stknm_merged.txt'
+stknm_crawled_txt = 'crawled_stknms.txt'
 
 payload = {
     'patentSearchConfig': {
@@ -49,56 +54,48 @@ headers = {
 
 
 def compose_payload(stknm, year):
-    query_str = '{stknm} and ADY={year}'.format(stknm=stknm, year=year)
+    query_str = '\'{stknm}\' and ADY={year}'.format(stknm=stknm, year=year)
     payload['patentSearchConfig'].update({'Query': query_str})
     return json.dumps(payload)
 
 
 def select_data(json_dct, stknm, year):
     cPickle.dump(json_dct, open('data/{year}_{stknm}.pickle'.format(year=year, stknm=stknm), 'w'))
-    res = json_dct.get('Option', {}).get('ResultSection', {})
-    return pd.DataFrame.from_dict(res).assign(stknm=stknm).assign(year=year)\
-        if res else None
+    # res = json_dct.get('Option', {}).get('ResultSection', {})
 
 
-def cawl_by_stknm_year(stknm, year):
+def crawl_by_stknm_year(stknm, year):
+    time.sleep(2)
     payload = compose_payload(stknm=stknm, year=year)
     r = requests.post(url=url, data=payload, headers=headers)
-    res = select_data(json_dct=r.json(), stknm=stknm, year=year)
-    return res
+    if 'ErrorInfo' in r.json():
+        logging.warn('ERRORS: {stknm}_{year} encounter {error}.'\
+                     .format(stknm=stknm,
+                             year=year,
+                             error=r.json()['ErrorInfo'].encode('utf-8')
+                             )
+                     )
+    else:
+        # just save crawled data, not select immediately
+        select_data(json_dct=r.json(), stknm=stknm, year=year)
 
 
 def main():
-    with open('crawled_stks.pickle', 'r') as f:
-        crawled = cPickle.load(f)
-    df_lst = []
-    df_stk = pd.read_excel(stknm_fname, encoding='utf-8')
-    # years = range(2010, 2017)
-    years = range(2014, 2017)
-    reverse_stknms = df_stk['Conme'].tolist()[::-1]
-    i = 0
-    # for stknm in df_stk['Conme']:
-    for stknm in reverse_stknms:
-    # for stknm in ['平安银行股份有限公司', '金田实业(集团)股份有限公司']:
-        if stknm.encode('utf-8') in crawled:
-            continue
-        i += 1
-        if i % 50 == 0:
-            print('*')
+    with open(stknm_merged_txt, 'r') as f:
+        stknm_lst = f.read().split(',')
+    i, years = 0, range(2014, 2017)
+    for stknm in stknm_lst:
         for year in years:
-            df = cawl_by_stknm_year(stknm=stknm.encode('utf-8'), year=year)
-            df_lst.append(df)
-    cPickle.dump(df_lst, open('stk_innojoy_res.pickle', 'w'))
-    df_res = pd.concat(df_lst)
-    df_res.to_csv(stk_innojoy_res, sep='\t', encoding='utf-8')
+            if '{year}_{stknm}.pickle'.format(year=year, stknm=stknm) \
+                    in crawled_file_lst:
+                continue
+            crawl_by_stknm_year(stknm=stknm, year=year)
+        commands.getstatusoutput("echo {stknm} >> {fname}".\
+                                 format(stknm=stknm, fname=stknm_crawled_txt))
+        i += 1
+        if i % 100 == 0:
+            logging.info('You have crawled {pct}% stks.'.format(pct='%0f' % (i * 100.0 / 3700)))
 
 
 if __name__ == '__main__':
-    # payload = compose_payload('平安银行', 2014)
-    # print(payload)
-    # main()
-    # year = 2014
-    # conme = '平安银行'
-    # res = cawl_by_stknm_year(stknm=conme, year=year)
-    # print(res)
     main()
