@@ -26,5 +26,14 @@ def main():
         f.write(','.join(list(stk_set)))
 
 
+def print_res():
+    with open(stknm_merged_txt, 'r') as f:
+        line = f.read()
+    with open('stknm_merged_2.txt', 'w') as f:
+        lines = line.replace(',', '\n')
+        f.write(lines)
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    print_res()

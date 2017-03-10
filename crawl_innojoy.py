@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import time
 import json
 import cPickle
@@ -65,14 +66,17 @@ def select_data(json_dct, stknm, year):
 
 
 def crawl_by_stknm_year(stknm, year):
-    time.sleep(2)
+    time.sleep(1)
     payload = compose_payload(stknm=stknm, year=year)
     r = requests.post(url=url, data=payload, headers=headers)
     if 'ErrorInfo' in r.json():
+        errors = r.json()['ErrorInfo']
+        if re.search(r'IP', errors) and re.search(r'VIP', errors):
+            raise Exception('ENCOUNTERED IP CONSTRAINTS.')
         logging.warn('ERRORS: {stknm}_{year} encounter {error}.'\
                      .format(stknm=stknm,
                              year=year,
-                             error=r.json()['ErrorInfo'].encode('utf-8')
+                             error=errors.encode('utf-8')
                              )
                      )
     else:
@@ -84,13 +88,16 @@ def main():
     with open(stknm_merged_txt, 'r') as f:
         stknm_lst = f.read().split(',')
     i, years = 0, range(2014, 2017)
-    for stknm in stknm_lst:
+    # for stknm in stknm_lst: # crawled 248 companies
+    # for stknm in stknm_lst[248:]:
+    # for stknm in stknm_lst[433:]:
+    for stknm in stknm_lst[813:]:
         for year in years:
             if '{year}_{stknm}.pickle'.format(year=year, stknm=stknm) \
                     in crawled_file_lst:
                 continue
             crawl_by_stknm_year(stknm=stknm, year=year)
-        commands.getstatusoutput("echo {stknm} >> {fname}".\
+        commands.getstatusoutput("echo '{stknm}' >> {fname}".\
                                  format(stknm=stknm, fname=stknm_crawled_txt))
         i += 1
         if i % 100 == 0:
