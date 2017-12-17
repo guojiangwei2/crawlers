@@ -6,7 +6,8 @@ import logging
 import cPickle
 import pandas as pd
 
-target_flst = glob.glob('data/201[4-6]_*.pickle')
+target_flst = glob.glob('data/201*.pickle')
+print(target_flst)
 res_csv = 'crawled_stat.csv'
 
 
@@ -24,10 +25,9 @@ def main():
     print('crawled data cnt is {cnt}.'.format(cnt=len(data_lst)))
     df_lst = [select_data(dct, fname[:-7].split('_')[1], fname[:-7].split('_')[0])
               for (fname, dct) in data_lst]
-    df_res = pd.concat(df_lst)\
-        .loc[:, ('stknm', 'year', 'Database', 'Count')]\
-        .set_index(['stknm', 'year', 'Database'])\
-        .unstack()\
+    df_res = pd.concat(df_lst).loc[:, ('stknm', 'year', 'Database', 'Count')] \
+        .set_index(['stknm', 'year', 'Database']) \
+        .unstack() \
         .reset_index()
     df_res.to_csv(res_csv, sep='\t', encoding='utf-8')
 

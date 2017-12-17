@@ -1,8 +1,13 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-target_stknms_txt = 'target_stknms.txt'
-crawled_stknms_txt = 'crawled_stknms.txt'
+import random
+import requests
+
+innojoy_url = 'http://www.innojoy.com/client/interface.aspx'
+proxy_url = 'http://lab.crossincode.com/proxy/get/?num=5&head=https'
+
+raw_csv = 'data/stocks.csv'
+candi_csv = 'data/candi.csv'
 
 payload = {
     'patentSearchConfig': {
@@ -17,13 +22,13 @@ payload = {
         'Query': '',
         'RemoveOnes': '',
         'SmartSearch': '',
-        'Sortby': '-IDX,PNM',
+        'Sortby': '-INNOJOY指数,-公开（公告）日,公开（公告）号',
         'TreeQuery': '',
         'TrsField': '',
         'Verification': ''
     },
     'requestModule': 'PatentSearch',
-    'userId': '587D23BB-3852-43A2-A44C-E606F22626E9'
+    'userId': ''
 }
 
 headers = {
@@ -33,8 +38,12 @@ headers = {
     'Connection': 'keep-alive',
     'Content-Length': '366',
     'Content-Type': 'application/json',
-    'Cookie': ('JSESSIONID=vb87dm46litr1at8rltyl0l5h; Hm_lvt_9ebd156ac7d2304301a6a7f0434e8257=1488609334; '
-               'Hm_lpvt_9ebd156ac7d2304301a6a7f0434e8257=1488685121'),
+    'Cookie': ('__cfduid=d239c3ba830e333aa1eb62450f790a1dd1513507427; '
+               'yjs_id=TW96aWxsYS81LjAgKE1hY2ludG9zaDsgSW50ZWwgTWFjIE9TIFggMTBfMTNf'
+               'MSkgQXBwbGVXZWJLaXQvNTM3LjM2IChLSFRNTCwgbGlrZSBHZWNrbykgQ2hyb21lLzYzL'
+               'jAuMzIzOS44NCBTYWZhcmkvNTM3LjM2fHd3dy5pbm5vam95LmNvbXwxNTEzNTA3NDI5NzEyfA; '
+               'ctrl_time=1; Hm_lvt_426d1726327b6b6225922c5623453d3d=1513507430; '
+               'Hm_lpvt_426d1726327b6b6225922c5623453d3d=1513507567'),
     'Host': 'www.innojoy.com',
     'Origin': 'http://www.innojoy.com',
     'Referer': 'http://www.innojoy.com/searchresult/default.html',
@@ -42,3 +51,73 @@ headers = {
                    'Chrome/56.0.2924.87 Safari/537.36'),
     'X-Requested-With': 'XMLHttpRequest'
 }
+
+user_agent_list = [
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1",
+    "Mozilla/5.0 (X11; CrOS i686 2268.111.0) AppleWebKit/536.11 (KHTML, like Gecko) Chrome/20.0.1132.57 Safari/536.11",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.6 (KHTML, like Gecko) Chrome/20.0.1092.0 Safari/536.6",
+    "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.6 (KHTML, like Gecko) Chrome/20.0.1090.0 Safari/536.6",
+    "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/19.77.34.5 Safari/537.1",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.9 Safari/536.5",
+    "Mozilla/5.0 (Windows NT 6.0) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.36 Safari/536.5",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 5.1) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1063.0 Safari/536.3",
+    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_0) AppleWebKit/536.3 (KHTML, like Gecko) "
+     "Chrome/19.0.1063.0 Safari/536.3"),
+    "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1062.0 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1061.1 Safari/536.3",
+    "Mozilla/5.0 (Windows NT 6.2) AppleWebKit/536.3 (KHTML, like Gecko) Chrome/19.0.1061.0 Safari/536.3",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/535.24 (KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24",
+    "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/535.24 (KHTML, like Gecko) Chrome/19.0.1055.1 Safari/535.24",
+    ("Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US) AppleWebKit/531.21.8 (KHTML, like Gecko) "
+     "Version/4.0.4 Safari/531.21.10"),
+    ("Mozilla/5.0 (Windows; U; Windows NT 5.2; en-US) AppleWebKit/533.17.8 (KHTML, like Gecko) "
+     "Version/5.0.1 Safari/533.17.8"),
+    ("Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/533.19.4 (KHTML, like Gecko) "
+     "Version/5.0.2 Safari/533.18.5"),
+    "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-GB; rv:1.9.1.17) Gecko/20110123 (like Firefox/3.x) SeaMonkey/2.0.12",
+    "Mozilla/5.0 (Windows NT 5.2; rv:10.0.1) Gecko/20100101 Firefox/10.0.1 SeaMonkey/2.7.1",
+    ("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_5_8; en-US) AppleWebKit/532.8 (KHTML, like Gecko) "
+     "Chrome/4.0.302.2 Safari/532.8"),
+    ("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_4; en-US) AppleWebKit/534.3 (KHTML, like Gecko) "
+     "Chrome/6.0.464.0 Safari/534.3"),
+    ("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_5; en-US) AppleWebKit/534.13 (KHTML, like Gecko) "
+     "Chrome/9.0.597.15 Safari/534.13"),
+    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_2) AppleWebKit/535.1 (KHTML, like Gecko) "
+     "Chrome/14.0.835.186 Safari/535.1"),
+    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.2 (KHTML, like Gecko) "
+     "Chrome/15.0.874.54 Safari/535.2"),
+    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/535.7 (KHTML, like Gecko) "
+     "Chrome/16.0.912.36 Safari/535.7"),
+    "Mozilla/5.0 (Macintosh; U; Mac OS X Mach-O; en-US; rv:2.0a) Gecko/20040614 Firefox/3.0.0 ",
+    "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.0.3) Gecko/2008092414 Firefox/3.0.3",
+    "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.5; en-US; rv:1.9.1) Gecko/20090624 Firefox/3.5",
+    ("Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.2.14) "
+     "Gecko/20110218 AlexaToolbar/alxf-2.0 Firefox/3.6.14"),
+    "Mozilla/5.0 (Macintosh; U; PPC Mac OS X 10.5; en-US; rv:1.9.2.15) Gecko/20110303 Firefox/3.6.15",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:2.0.1) Gecko/20100101 Firefox/4.0.1"
+]
+
+
+def get_headers():
+    ua = random.choice(user_agent_list)
+    headers.update({'User-Agent': ua})
+    return headers
+
+
+def get_proxies():
+    """
+    get proxies from http://lab.crossincode.com/proxy/api-ins/
+    :return:
+    """
+    resp = requests.get(proxy_url, headers={'user-agent': random.choice(user_agent_list)})
+    proxies = resp.json()['proxies']
+    return [{'https': 'https://' + item['https']} for item in proxies]
+
+
+if __name__ == "__main__":
+    print(get_headers())
+    # print(get_proxies())
