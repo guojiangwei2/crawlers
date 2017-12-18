@@ -8,7 +8,8 @@ import pandas as pd
 import cPickle
 import requests
 import logging
-from consts import innojoy_url, payload, get_headers, get_proxies, candi_csv
+# from consts import innojoy_url, payload, get_headers, get_proxies, candi_csv
+from consts import innojoy_url, payload, get_headers, get_local_proxies as get_proxies, candi_csv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__file__)
@@ -27,7 +28,7 @@ def dump_data(json_dct, stknm, year):
 def main():
     df_data = pd.read_csv(candi_csv, dtype={'year': str, 'name': str}, encoding='utf-8')
 
-    proxies_lst = []
+    proxies_lst, proxies = [], {}
     for _, row in df_data.iterrows():
         stknm = row['name']
         year = row['year']
@@ -41,17 +42,20 @@ def main():
         logger.info("Start crawl {stknm}...".format(stknm=stknm.encode('utf-8')))
         _payload = compose_payload(stknm=stknm, year=year)
 
-        # 请求目标网址3次
+        # 请求目标网址3/2次
         n = 3
         while n:
             # query proxies if there's not available in list
             if not proxies_lst:
-                time.sleep(3)
+                # time.sleep(300)
                 proxies_lst = get_proxies()
+                logger.info("Get proxies-list done.")
                 if not proxies_lst:
                     logger.warning("Proxies does not work.")
                     raise Exception('Proxies does not work.')
-            proxies = proxies_lst.pop()
+            if not proxies:
+                proxies = proxies_lst.pop()
+                logger.info("Get new proxies {p}.".format(p=json.dumps(proxies)))
 
             try:
                 resp = requests.post(
@@ -66,22 +70,22 @@ def main():
                     logger.info("Crawl stock {stknm} done.".format(stknm=stknm.encode('utf-8')))
                     break
             except Exception as e:
-                print(repr(e))
+                logger.warning(repr(e))
+                # if enc requests-post error, get new proxies
+                proxies = {}
+
+            if 'ErrorInfo' in resp.json():
+                errors = resp.json()['ErrorInfo']
+                logging.warn('ERRORS: {stknm}_{year} encounter {error}.'.format(
+                    stknm=stknm.encode('utf-8'), year=year, error=errors.encode('utf-8')))
+                proxies = {}
             logger.info("Crawl stock {stknm} {cnt} times...".format(stknm=stknm.encode('utf-8'), cnt=4 - n))
             n -= 1
-            time.sleep(1)
+            time.sleep(7)
 
         # 保存爬取的数据
-        if 'ErrorInfo' in resp.json():
-            errors = resp.json()['ErrorInfo']
-            # IP限制的时候，暂停程序
-            if re.search(r'IP', errors) and re.search(r'VIP', errors):
-                raise Exception('ENCOUNTERED IP CONSTRAINTS.')
-            logging.warn('ERRORS: {stknm}_{year} encounter {error}.'.format(stknm=stknm.encode('utf-8'), year=year,
-                                                                            error=errors.encode('utf-8')))
-        else:
-            dump_data(json_dct=resp.json(), stknm=stknm, year=year)
-            logger.info("Dump stock {stknm} done.".format(stknm=stknm.encode('utf-8')))
+        dump_data(json_dct=resp.json(), stknm=stknm, year=year)
+        logger.info("Dump stock {stknm} done.".format(stknm=stknm.encode('utf-8')))
 
         # 修改目标csv的字段，将是否处理字段置为1并保存
         df_data.loc[np.logical_and(df_data.name == stknm, df_data.year == year), 'is_crawled'] = 1

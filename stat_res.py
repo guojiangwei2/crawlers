@@ -7,22 +7,24 @@ import cPickle
 import pandas as pd
 
 target_flst = glob.glob('data/201*.pickle')
-print(target_flst)
 res_csv = 'crawled_stat.csv'
 
 
 def select_data(resp_json, stknm, year):
-    res = resp_json.get('Option', {}).get('ResultSection', {})
-    if res:
-        return pd.DataFrame.from_dict(res).assign(stknm=stknm).assign(year=year)
-    else:
-        logging.warn('{stknm} at {year} gets none data.'.format(stknm=stknm, year=year))
-        return
+    try:
+        res = resp_json.get('Option', {}).get('ResultSection', {})
+        if res:
+            return pd.DataFrame.from_dict(res).assign(stknm=stknm).assign(year=year)
+        else:
+            logging.warn('{stknm} at {year} gets none data.'.format(stknm=stknm, year=year))
+            return
+    except Exception as e:
+        print(repr(e))
 
 
 def main():
     data_lst = [(f, cPickle.load(open(f, 'r'))) for f in target_flst]
-    print('crawled data cnt is {cnt}.'.format(cnt=len(data_lst)))
+    # print('crawled data cnt is {cnt}.'.format(cnt=len(data_lst)))
     df_lst = [select_data(dct, fname[:-7].split('_')[1], fname[:-7].split('_')[0])
               for (fname, dct) in data_lst]
     df_res = pd.concat(df_lst).loc[:, ('stknm', 'year', 'Database', 'Count')] \

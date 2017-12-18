@@ -118,6 +118,11 @@ def get_proxies():
     return [{'https': 'https://' + item['https']} for item in proxies]
 
 
+def get_local_proxies():
+    proxy = requests.get('http://localhost:5010/get/').text
+    return [{'http': 'http://' + proxy}, {'https': 'https://' + proxy}]
+
+
 if __name__ == "__main__":
     print(get_headers())
     # print(get_proxies())
